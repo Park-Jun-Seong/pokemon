@@ -1,0 +1,31 @@
+var s_title = $('#power_link_title').val();
+var s_content = $('#power_link_content').val();
+//console.log(s_title);
+//console.log(s_content);
+//var s_title = '운동화';
+//var s_content = '운동화';
+$.ajax({
+	url: 'https://ssl.pstatic.net/adimg3.search/adpost/js/adpost_show_ads_v2.min.js',
+	dataType: 'script',
+	cache: true,
+	success: function() {
+		NAVER_ADPOST_V2({ 
+			channel: "dcinside.ch3",
+			pageSize: 2,
+			title: s_title,
+			content: s_content,
+			keywordGroup: "디시인사이드_공통",
+			url: location.href,
+			test: false
+		}); 
+	}
+});
+
+function handle_naver_ads_response(response) {
+	if(typeof(response['error']) == 'undefined' && response['ads']['length']) {
+		$('.view_ad_wrap .power_link .pwlink_list *').remove();
+		
+		$('#ad_powLink-tmpl').tmpl(response.ads).appendTo('.view_ad_wrap .power_link .pwlink_list');
+		$('.view_ad_wrap .power_link').show();
+	}
+}

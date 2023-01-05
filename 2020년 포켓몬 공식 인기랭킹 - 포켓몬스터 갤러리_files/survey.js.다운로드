@@ -1,0 +1,121 @@
+/*
+ * 설문조사 
+ * 2018.11.21 mh
+ * 
+ */
+
+// 설문조사
+var survey_layer = function(url) {
+	var check_url		= url.split('/');
+	if(check_url['2'] == 'event.dcinside.com') {
+		if (url) {
+			var ci_t = get_cookie('ci_c');
+			$.ajax({
+				data : { 'ci_t' : ci_t, url: url}
+				, type : 'POST'
+				, url : '/ajax/survey_ajax/vote'
+				, cache : false
+				, async : true
+				, success : function (data){
+					if (data == "") {
+						alert('설문을 불러오지 못했습니다.');
+						return false;
+					} else {
+						$('#survey').html(data).show();
+					}
+				}
+			});
+		}
+	}else{
+		window.open(url);
+	}
+	
+};
+
+
+$(function() {
+	
+	$(document).on('click','.checkVote', function(event){
+		
+		var multi = $('input[name="multi"]').val();
+		if(multi == 'Y' && $('.checkVote:checked').length > 3 ){
+			 alert('최대 3개까지 선택가능합니다.');
+			 return false;
+		}
+		
+		//console.log($(this).attr('class'));
+		var sel_idx = $(this).attr('id');
+		if($("input:checkbox[id='"+sel_idx+"']").is(":checked")) { 
+			$("#list_"+sel_idx).addClass('selchk');
+		} else {
+			$("#list_"+sel_idx).removeClass('selchk');
+		}
+	});
+	
+	/*설문 투표*/
+	$(document).on('click','.btn-vote', function(){			
+		var survey_idx		= $('input[name="survey_idx"]').val();
+		var grant_member = $('input[name="grant_member"]').val();
+		var is_login = $('input[name="is_login"]').val();
+		var check_vote = new Array();
+		
+		$(".checkVote").each(function(i){
+			if ($(this).prop("checked")){
+				 check_vote.push($(this).val())
+			}
+		});
+		
+		//console.log(check_vote);
+		if(check_vote <= 0) {
+			alert('설문항목을 선택해주십시오.');
+			return false;
+		}
+
+		if(grant_member == 'Y' && is_login == 'N'){
+			alert('로그인을 해야 설문에 참여하실 수 있습니다.');
+			return false;
+		}
+		var tocken = get_cookie('ci_c');
+
+		if (check_vote) {
+			$.post('/ajax/survey_ajax/update_vote',{ ci_t : tocken, 'survey_idx' : survey_idx, 'check_vote' : check_vote },function(data){
+				var tmp = $.trim(data);
+				var msg = tmp.split('|');
+				
+				if (msg[0] == "ok") {
+					alert('정상적으로 투표가 이루어졌습니다.');
+					survey_result(survey_idx);
+				} else {						
+					alert(msg[1]);
+				}
+			});			
+		}			
+	});
+	
+	// 설문결과 
+	var survey_result = function (idx) {
+		var ci_t = get_cookie('ci_c');
+		$.ajax({
+			data : { 'ci_t' : ci_t, no: idx}
+			, type : 'POST'
+			, url : '/ajax/survey_ajax/vote_result'
+			, cache : false
+			, async : true
+			, success : function (data){
+				if (data == "") {
+					alert('설문결과를 불러오지 못했습니다.');
+					return false;
+				} else {
+					$('#survey').html(data).show();
+				}
+			}
+		});
+		
+	}
+
+	/*설문 결과보기*/
+	$(document).on('click','.btn-vote-result', function(){			
+		var survey_idx		= $('input[name="survey_idx"]').val();
+		survey_result(survey_idx);
+	});
+});

@@ -1,0 +1,219 @@
+/*
+ * 갤러리 우측 로그인 박스 스크립트
+ * 2018.02.05 - jhcho
+ * 
+ */
+
+/*
+ * 알림 리스트
+ */
+
+//알림 목록 레이어 열기/닫기
+var alarmList = function(toggleElm, toggleClass, type) {
+	console.log(toggleElm)
+	console.log(toggleClass)
+	console.log(type)
+	var chk_view = 'N';
+	console.log($('#alarmList').css('position'))
+	console.log($('#alarmList').css('display'))
+	if(type == 'H'){
+		if($('#alarmList').css('position') != 'fixed' && $('#alarmList').css('display') == 'block') chk_view = 'Y';
+		$('#alarmList').css({'top':'50%','left':'50%','margin-left':'-210px','margin-top':'-118px','right':'','position':'fixed'});
+		$('#alarmConf').css({'top':'50%','left':'50%','margin-left':'-210px','margin-top':'-118px','right':'','position':'fixed'});
+	}else if(type == 'G'){
+		if($('#alarmList').css('position') != 'fixed' && $('#alarmList').css('display') == 'block') chk_view = 'Y';
+	}else{
+		if($('#alarmList').css('position') == 'fixed' && $('#alarmList').css('display') == 'block') chk_view = 'Y';
+		$('#alarmList').css({'top':'79px','left':'','margin-left':'','margin-top':'','right':'-1px','position':''});
+		$('#alarmConf').css({'top':'79px','left':'','margin-left':'','margin-top':'','right':'-1px','position':''});
+	}
+	console.log(chk_view)
+ if($('#alarmList').css('display') == 'none') {
+	 login_box_layer_close();
+ 	
+ 	$('#alarmList').show();
+ 	
+	$(toggleElm).removeClass(toggleClass);
+	
+	if(typeof(alarmClearNew) == 'function') {
+		alarmClearNew();	// alarm_polling.js
+	}
+ }
+ else {
+	 if(chk_view == 'N'){
+		 alarmListClose();
+		 alarmConfClose();
+	 }
+ }
+};
+
+//알림 목록 레이어 닫기
+var alarmListClose = function() {
+	$('#alarmList').hide();
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+/*
+ * 알림 설정
+ */
+
+// 알림 설정 레이어 열기/닫기
+var alarmConf = function() {
+    if($('#alarmConf').css('display') == 'none') {
+    	login_box_layer_close();
+    	$('#alarmConf').show();
+    }
+    else {
+    	alarmConfClose();
+    }
+};
+
+// 알림 on/off
+var alarmConfToggle = function(elm) {
+	if($(elm).hasClass('on')) {
+		$(elm).removeClass('on');
+		$('.blind', elm).text('off');
+	}
+	else {
+		$(elm).addClass('on');
+		$('.blind', elm).text('on');
+	}
+}
+
+// 알림 설정 레이어 닫기
+var alarmConfClose = function() {
+	$('#alarmConf').hide();
+};
+
+// 알림 설정 저장
+var alarmConfUpdate = function() {
+	var conf = new Object;
+	var csrf_token = get_cookie('ci_c');
+	
+	$('#alarmConf .setting_onoff > button').each(function() {
+		var status = $(this).hasClass('on') ? 1 : 0;
+
+		conf[$(this).attr('data-id')] = status;
+	});
+	
+	if(Object.keys(conf).length > 0) {
+		$.ajax({
+			url: "//gall.dcinside.com/ajax/alarm_ajax/conf_update?jsoncallback=?",
+			type : "GET",
+			cache: false,
+		    async: false,
+		    dataType: 'json',
+	        data : {
+	            ci_t : csrf_token,
+	            conf : conf
+	        },
+			success: function(res) {
+				if(res === '0000') {
+					alert('적용되었습니다.');
+					alarmConfClose();
+				}
+				else {
+					alert('일시적인 오류로 저장되지 않았습니다.');
+				}
+			}
+		});
+	}
+};
+
+// 우측 로그인박스 내 레이어 팝업 전체 닫기 (화살표 닫힘으로 변경 포함)
+var login_box_layer_close = function() {
+	if($('.login_box .pop_wrap, .login_wrap .pop_wrap').length > 0){
+		$('.login_box .pop_wrap, .login_wrap .pop_wrap').hide();
+		$('#my_favorite').hide();
+		$('#alarmList').hide();
+		$('.login_box .icon_favorites').addClass('hide');
+		$('.login_box .icon_admin').addClass('hide');
+	}else{
+		$('#top .dchead .pop_wrap').hide();
+	}
+}
+
+
+//힛갤콘 설정 저장
+var hitconConfToggle = function(elm) {
+	
+	var confirm_msg = ($(elm).hasClass('on'))?'HIT 갤러콘을 사용 중지하시겠습니까?':'HIT 갤러콘을 사용하시겠습니까?';
+    
+	if(!confirm(confirm_msg)) {
+		return false;
+	}
+	var conf = new Object;
+	var csrf_token = get_cookie('ci_c');
+	var status = 0;
+	
+	$('#hitConConf .setting_onoff > button').each(function() {
+		status = $(this).hasClass('on') ? 0 : 1;
+
+		conf[$(this).attr('data-id')] = status;
+	});
+	
+	
+	
+	if(Object.keys(conf).length > 0) {
+		$.ajax({
+			url: "//gall.dcinside.com/ajax/gallercon_ajax/conf_update?jsoncallback=?",
+			type : "GET",
+			cache: false,
+		    async: false,
+		    dataType: 'json',
+	        data : {
+	            ci_t : csrf_token,
+	            conf : conf
+	        },
+			success: function(res) {
+				if(res === '0000') {
+					var alet_msg = (!status)?'HIT 갤러콘이 미적용되었습니다.':'HIT 갤러콘이 적용되었습니다.';
+					if(!status) {
+						$(elm).removeClass('on');
+						$('.blind', elm).text('off');
+					} else {
+						$(elm).addClass('on');
+						$('.blind', elm).text('on');
+					}
+					
+					alert(alet_msg);
+					//hitconConfClose();
+				}
+				else {
+					if(res === '0001') {
+						alert('하루 변경 횟수가 초과되었습니다.');
+					}else {
+						alert('일시적인 오류로 저장되지 않았습니다.');
+					}
+				}
+			}
+		});
+	}
+}
+
+
+//힛갤콘 설정 레이어 열기/닫기
+var hitconConf = function() {
+	if($('#hitConMsg').css('display') != 'none') {
+		hitconMsgClose();
+	}
+    if($('#hitConConf').css('display') == 'none') {
+    	login_box_layer_close();
+    	$('#hitConConf').show();
+    }
+    else {
+    	hitconConfClose();
+    }
+};
+
+//힛갤콘 설정 레이어 닫기
+var hitconConfClose = function(cookie) {
+	if(cookie) set_cookie('hitcon_msg', "Y", 168, "dcinside.com");
+	$('#hitConConf').hide();
+}
+
+var hitconMsgClose = function() {
+	set_cookie('hitcon_msg', "Y", 168, "dcinside.com");
+	$('#hitConMsg').hide();
+}

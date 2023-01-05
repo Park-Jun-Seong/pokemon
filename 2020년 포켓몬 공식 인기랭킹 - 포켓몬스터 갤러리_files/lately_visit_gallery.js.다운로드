@@ -1,0 +1,60 @@
+function lately_gall_init(id, name, type) {
+	var visit_elm = $('#visit_history');
+	var segment = window.location.pathname.split('/');
+		
+	var newvisit_width = 0;
+	var visit_left = 0;
+	
+	var visitStorageOptions = {
+		    origin: "https://gall.dcinside.com",
+		    path: "/_js/crossDomainStorage.html",
+		    storage: "localStorage"
+		};
+	
+	var Storage = new crossDomainStorage(visitStorageOptions);
+	
+	
+	var modify_storage_json = function (jsonData, id, type) {
+		
+		var new_data = new Array();
+		var strg_galls = $.parseJSON(jsonData);
+		
+		for(var i in strg_galls) {
+			if(strg_galls[i] && typeof(strg_galls[i].id) != 'undefined' && (strg_galls[i].id != id || strg_galls[i].type != type)) {
+				new_data.push(strg_galls[i]);
+			}
+		}
+		return new_data;
+	}
+	
+	Storage.getItem('lately_gallery', function(key, value) {
+		try {
+			var strg_galls = $.parseJSON(value);
+		}
+		catch(e) {
+			var strg_galls = null;
+			Storage.setItem('lately_gallery', strg_galls);
+		}
+		
+		if(id) {
+			if(strg_galls == null || typeof(strg_galls) != 'object' || typeof(strg_galls[0]) != 'object' || strg_galls[0].id != id || strg_galls[0].type != type) {
+				strg_galls = modify_storage_json(value, id, type);
+				
+				var type_dir = '';
+				if(type == 'M') {
+					type_dir = 'mgallery/';
+				} else if(type == 'MI') {
+					type_dir = 'mini/'
+				} else {
+					type_dir = '';
+				}
+				
+				link = 'gall.dcinside.com/'+ type_dir +'board/lists?id='+ id;
+				
+				strg_galls.unshift({ 'id' : id, 'name': name, 'type' : type, 'link' : link});
+				Storage.setItem('lately_gallery', JSON.stringify(strg_galls.slice(0, 50)));
+			}
+		}
+		
+	});
+}

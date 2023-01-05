@@ -1,0 +1,181 @@
+
+$(function () {
+	if($("#kcaptcha_use").val() == 'Y') {
+		kcaptcha_init($("#no").val());
+	}
+	//다음(카카오) 추천검색
+	var kakao_rel_use = $("#kakao_rel_use").val();
+	if(kakao_rel_use == 'Y') {
+		var kakao_rel_txt = $("#kakao_rel_txt").val();
+		relateKeyword($("#no").val(), kakao_rel_txt);
+	}
+	moveCommentView();
+	/*
+	$(".write_div img").each(function(i, ele) {
+		if(ele.src != '' && ele.complete == true && ele.naturalWidth ==  0){
+			this.src += '&t=1';
+		}
+	});
+	*/
+	
+	// 동영상 공유하기
+	$(document).on('click','.movie_copy',function(){
+	    $('#movie_share_code').select();
+	    document.execCommand('copy');
+	    $('.MovieshareBox').hide()
+	    alert('소스가 클립보드에 복사되었습니다.');
+	    
+	});
+	$(document).on('click','.movie_share_close',function(){
+		$('.MovieshareBox').hide();
+	});
+});
+
+var moveCommentView = function() {
+	//댓글보기면 스크롤 이동
+	if($("#comment_view").val() === '1') {
+		setTimeout(function(){ document.getElementById('comment_wrap_'+$("#no").val()).scrollIntoView(); }, 1000);
+		
+	}
+}
+// 
+var showLayer = function(obj, layerName){
+	if($("#"+layerName).css("display") == "none"){
+		$("#"+layerName).show();
+	} else {
+		$("#"+layerName).hide();
+	}
+}
+
+// 일괄 다운로드
+var saveContentImgs = function() {
+	var zip = new JSZip();
+	var file_count = $('.appending_file_box li').length;
+	
+	$('.appending_file_box .loading_btntype').show().prev().hide();
+	
+	var add_file = function(url, filename) {
+		$.ajax({
+			url: url,
+			processData: false,
+			contentType: false,
+			xhrFields: { 
+				withCredentials: true,
+				responseType: 'blob'
+			},
+			success: function(imgData) {
+				zip.file(filename, imgData, {base64: true});
+				save_run();
+			}
+		});
+	}
+	
+	var save_run = function() {
+		if(Object.keys(zip.files).length < file_count) {
+			return false;
+		}
+		
+		zip.generateAsync({type:"blob"}).then(function(content) {
+		    saveAs(content, $.getURLParam('id') +'_'+ $.getURLParam('no') +'.zip');
+
+			$('.appending_file_box .loading_btntype').hide().prev().show();
+		});
+	}
+
+	$('.appending_file_box li').each(function(i) {
+		var url = $('a', this).attr('href').replace('/download.php', '/download_ajax2.php');
+
+		add_file(url, $('a', this).text());
+	});
+}
+
+//리스트
+var goList = function(url) {
+	location.href = url;
+}
+
+//수정
+var goModify = function(url) {
+	location.href = url;
+}
+
+//삭제
+var goDelete = function(url) {
+	location.href = url;
+}
+
+//삭제
+var goWrite = function(url) {
+	location.href = url;
+}
+
+
+//투표 iframe 리사이징
+var resizeHeight = function(FrameName)
+{
+    if(document.all) {
+        var body_height = frames['pollFrame'].document.body.scrollHeight;
+    } else {
+        var body_height= document.getElementById('pollFrame').contentWindow.document.body.offsetHeight;
+    }
+
+	 if(body_height != 22){ 
+	  document.getElementById('pollFrame').height=body_height;
+	 }else{
+	  document.getElementById('pollFrame').height=0;
+	 }
+}
+var goVote = function(url){
+	location.href = url;
+}
+
+// 동영상 공유
+var movie_share = function (no) {
+	var html = '';
+	
+	html += '<div class="pop_wrap type3 MovieshareBox" style="bottom:0;display:block"><div class="pop_content  source_share"><div class="pop_head bg"><h3>소스 공유하기</h3></div><div class="inner"><textarea class="source_share_in" id="movie_share_code" name ="movie_share_code" title="공유 소스 입력"><iframe src="https://gall.dcinside.com/board/movie/share_movie?no=' + no + '"></iframe></textarea>';
+	html += '</div><p class="infotxt"><em class="tip_deco999">*</em>소스를 글쓰기 화면에 붙여넣기 해주세요.</p><div class="btn_box"><button type="button" class="btn_blue small movie_copy">복사</button></div></div><button type="button" class="poply_whiteclose"><span class="blind">레이어 닫기</span><em class="sp_img icon_whiteclose movie_share_close"></em></button></div>';
+	
+	$('#movieIcon'+no).after(html);	
+}
+
+var img_numbering_tip = function() {
+	img_numbering = get_cookie('img_numbering') || 1;
+	document.cookie = "img_numbering="+ img_numbering +"; domain=.dcinside.com; path=/; expires=Fri, 31 Dec 9999 23:59:59 GMT;";
+	$('#dcimg_num_tip').fadeOut();
+}
+
+var img_numbering_toggle = function(elm, is_over) {
+	if(is_over == 0) {
+		$('button.btn', elm).hide();
+	}
+	else if(is_over == 1) {
+		$('#dcimg_num_tip', elm).fadeOut();
+		$('button.btn', elm).show();
+	}
+	else if(is_over == 3) {		// button click
+		if($('#dcimg_num_tip').index() >= 0) {
+			img_numbering_tip();
+			$('.writing_view_box .imgwrap button.btn').hide();
+		}
+		
+		// status is null or 0 or 1
+		var img_numbering = $(document).data('img_numbering');
+		if(img_numbering == '0') {
+			img_numbering = 1;
+			
+			$(document).data('img_numbering', img_numbering);
+			$('.writing_view_box .imgwrap .num').show();
+			$('.writing_view_box .imgwrap button.btn').text($(elm).text().replace('OFF', 'ON'));
+		}
+		else {
+			img_numbering = 0;
+			
+			$(document).data('img_numbering', img_numbering);
+			$('.writing_view_box .imgwrap .num').hide();
+			$('.writing_view_box .imgwrap button.btn').text($(elm).text().replace('ON', 'OFF'));
+		}
+
+		document.cookie = "img_numbering="+ img_numbering +"; domain=.dcinside.com; path=/; expires=Fri, 31 Dec 9999 23:59:59 GMT;";
+	}
+}
